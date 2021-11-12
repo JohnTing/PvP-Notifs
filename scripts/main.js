@@ -3,6 +3,7 @@ importPackage(Packages.arc.util.pooling);
 global.alerts = {};
 var lastUnlockTable = null;
 var lastUnlockLayout = null;
+const schemNumber = 30;
 function popup(intable){
 	var table = new Table(Tex.button);
 	table.update(() => {
@@ -26,7 +27,6 @@ function popup(intable){
 		lastUnlockTable = null;
 		lastUnlockLayout = null;
 	}), Actions.remove())));
-	
 	lastUnlockTable = container;
     lastUnlockLayout = intable;
 }
@@ -69,6 +69,25 @@ function eventLog(team,tile){
 	queue.add("E-"+eventid+" Team "+chatTeamColor(team)+team.name+"[white] has placed:"+ getConstructingBlock(tile).localizedName+ " at ["+ tile.x+","+tile.y+"]");
 	eventid++;
 }
+
+function getIcon(id) {
+    log("id = " + id);
+    let name = Core.settings.getString(id);
+
+    if (name) {
+        
+        let mychar = name.slice(-1);
+        // let icon=Icon.icons.get(name.slice(-1), Icon.paste);
+        let icon = Fonts.getGlyph(Fonts.def, mychar);
+        log("name = " + name);
+        log("icon = " + icon);
+        return icon;
+    } 
+    return Icon.paste;
+}
+
+
+
 
 const Milestone = {
 	name:"",
@@ -720,9 +739,17 @@ cons(e => {
 			this.cont.row();
 			this.cont.table(
 				cons((tbl)=>{
-					for(let i =0;i<10;i++){
+					for(let i =0;i<schemNumber;i++){
 						const g = i;
-						tbl.button(Icon.paste, Styles.clearToggleTransi, run(()=>{
+
+
+                        if(g > 1 && g % 5 == 0){
+                            tbl.row();
+                        }
+
+                        let icon = getIcon(g+"-schem");
+
+						tbl.button(icon, Styles.clearToggleTransi, run(()=>{
 							log(g+" setting")
 							Core.settings.put(g+"-schem",new java.lang.String(schem.name()));
 						})).update(b => b.setChecked(Core.settings.getString(g+"-schem")==schem.name())).width(46).height(46).name("test"+1).tooltip("set to slot "+g);
@@ -801,25 +828,25 @@ cons(e => {
 	Vars.ui.hudGroup.fill(cons(t => {
 		let style = Styles.clearTransi;
 		const width = 46*3/5;
-		for(let h = 0;h<10;h++){
+		for(let h = 0;h<schemNumber;h++){
 			const i = h;
-			if(h==5){
+			if(h > 1 && h % 5 == 0){
 				t.row();
 			}
-			let imgbutton = t.button(Icon.paste, style, run(()=>{
-				useSchematic(Core.settings.getString(i+"-schem"));
-			})).update(b => b.setDisabled(!Core.settings.getString(i+"-schem"))).width(width).height(width).name("ores").tooltip("use Schem "+i).get();
+            let icon = getIcon(i+"-schem");
+			let imgbutton = t.button(icon, style, run(()=>{
+				useSchematic(Core.settings.getString(i+"-schem"), i+"-schem");
+			})).update(b => b.setDisabled(!Core.settings.getString(i+"-schem"))).width(width).height(width).name("ores").tooltip(Core.settings.getString(i+"-schem")).get();
 			imgbutton.getImage().setScaling(Scaling.stretch);
 			imgbutton.getImage().setSize(width*0.8,width*0.8);
 			imgbutton.resizeImage(width*0.8);
-			
 		}
 		t.top().right().marginTop(364);
 	}));
 	
 }));
 
-function useSchematic(name){
+function useSchematic(name, id){
 	if(!name){return;}
 	print("searching for schem:"+name);
 	var found = null;
@@ -831,8 +858,11 @@ function useSchematic(name){
 	});
 	if(found){
 		Vars.control.input.useSchematic(found);
-	}
+	}else if(id) {
+        Core.settings.put(id,"");
+    }
 }
+
 
 var playerMiningAI= extend(AIController,{
 	mining:true,
@@ -948,6 +978,9 @@ function hasAmmo(build){
 }
 
 Events.run(Trigger.draw, () => {
+
+    drawMouse();
+
 	var camera = Core.camera;
 	var avgx = Math.floor(camera.position.x / Vars.tilesize);
 	var avgy = Math.floor(camera.position.y / Vars.tilesize);
@@ -1061,7 +1094,12 @@ Events.run(Trigger.update, () => {
 		enabled = false;
 		update();
 		while(!queue.isEmpty()){
-			Vars.ui.chatfrag.addMessage("[red]PvP-Alerts: "+queue.pop());
+            if (Version.build >= 132) {
+                Vars.ui.chatfrag.addMessage("[red]PvP-Alerts: " + queue.pop());
+            } else {
+                Vars.ui.chatfrag.addMessage(queue.pop(),"[red]PvP-Alerts");
+            }
+			
 		}
 		enabled = be;
 		wasCleared = false;
@@ -1141,6 +1179,30 @@ Events.on(EventType.WorldLoadEvent, e => {
 		pips.clear();
 	}
 });
+// Groups.player.index(1).unit().aimX
+function drawMouse() {
+    Groups.player.each(cons((e)=>{
+        let unit = e.unit();
+
+        if(unit && e != Vars.player) {
+            let color = e.team().color;
+            let x = e.mouseX;
+            let y = e.mouseY;
+            if(color && x && y) {
+
+                Drawf.circles(x, y, 6, color);
+                Lines.stroke(3, Pal.gray);
+                Lines.dashLine(unit.x, unit.y, x, y, Math.round(unit.dst(x, y) / 8));
+                Lines.stroke(1, color);
+                Lines.dashLine(unit.x, unit.y, x, y, Math.round(unit.dst(x, y) / 8));
+            }
+
+        }
+    }));
+    Draw.reset();
+};
+
+
 
 function update(){
 	if(!queue.isEmpty()){
@@ -1150,7 +1212,12 @@ function update(){
 				prevsent=0;
 			}
 		}else{
-			Vars.ui.chatfrag.addMessage("[red]PvP-Alerts: "+queue.pop());
+
+            if (Version.build >= 132) {
+                Vars.ui.chatfrag.addMessage("[red]PvP-Alerts: " + queue.pop());
+            } else {
+                Vars.ui.chatfrag.addMessage(queue.pop(),"[red]PvP-Alerts");
+            }
 		}
 		
 	}	
