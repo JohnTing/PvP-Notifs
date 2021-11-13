@@ -3,7 +3,7 @@ importPackage(Packages.arc.util.pooling);
 global.alerts = {};
 var lastUnlockTable = null;
 var lastUnlockLayout = null;
-var originInput = Vars.control.input;
+
 const schemNumber = 30;
 function popup(intable){
 	var table = new Table(Tex.button);
@@ -825,8 +825,8 @@ cons(e => {
             if(Vars.mobile) {
                 if(playerAI){
                     Vars.control.input = new DesktopInput();
-                }else{
-                    Vars.control.input = originInput;
+                } else {
+                    Vars.control.input = new MobileInput();
                 }
             }
 
