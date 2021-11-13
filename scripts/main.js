@@ -3,6 +3,7 @@ importPackage(Packages.arc.util.pooling);
 global.alerts = {};
 var lastUnlockTable = null;
 var lastUnlockLayout = null;
+var originInput = Vars.control.input;
 const schemNumber = 30;
 function popup(intable){
 	var table = new Table(Tex.button);
@@ -819,7 +820,16 @@ cons(e => {
 			}else{
 				playerAI = new BuilderAI();
 				playerAI.unit(Vars.player.unit());
+                
 			}
+            if(Vars.mobile) {
+                if(playerAI){
+                    Vars.control.input = new DesktopInput();
+                }else{
+                    Vars.control.input = originInput;
+                }
+            }
+
 		})).update(b => b.setChecked(!!playerAI)).width(46).height(46).name("ores").tooltip("become gamma Ai");
 		
 		t.top().right().marginTop(180);
