@@ -896,9 +896,11 @@ var playerMiningAI= extend(AIController,{
 
         if(this.mining){
             if(this.timer.get(1, 240) || this.targetItem == null){
-                this.targetItem = unit.team.data().mineItems.min(boolf(i => Vars.indexer.hasOre(i) && unit.canMine(i)),floatf(i => core.items.get(i)));
+                // let mineItems = unit.team.data().mineItems;
+                let mineItems = Seq.with(Items.copper, Items.lead, Items.coal, Items.titanium, Items.thorium);
+                this.targetItem = mineItems.min(boolf(i => Vars.indexer.hasOre(i) && unit.canMine(i)),floatf(i => core.items.get(i)));
             }
-
+            
             //core full of the target item, do nothing
             if(this.targetItem != null && core.acceptStack(this.targetItem, 1, unit) == 0){
                 unit.clearItem();
@@ -1086,6 +1088,8 @@ Events.run(Trigger.update, () => {
 	});
 	if(playerAI && Vars.player.unit() && Vars.player.unit().type){
 		let base = Math.min(Vars.player.team().items().get(Items.copper),Vars.player.team().items().get(Items.lead));
+        base = Math.min(base, base,Vars.player.team().items().get(Items.coal));
+
 		if((base<1000 && playerAI instanceof BuilderAI)||  Vars.player.unit().type.buildSpeed<=0){
 			playerAI = playerMiningAI;
 		}else if(base>=1000 && playerAI == playerMiningAI){
@@ -1390,3 +1394,29 @@ global.alerts.onChat = function(msg){onChat("Xelo",msg);};
 
 
 
+/** Find the closest ore block relative to a position. */
+// fail
+function findClosestSand(xp, yp, item){
+    let tile = Geometry.findClosest(xp, yp, getOrePositions(item));
+
+    if(tile == null) return null;
+
+    for(let x = Math.max(0, tile.x - quadrantSize / 2); x < tile.x + quadrantSize / 2 && x < world.width(); x++){
+        for(let y = Math.max(0, tile.y - quadrantSize / 2); y < tile.y + quadrantSize / 2 && y < world.height(); y++){
+            let res = world.tile(x, y);
+            if(res.block() == Blocks.air){
+                if(res.drop() == item) {
+                    return res;
+                }
+                if(res.drop() == null && item == Items.sand && (res.floor() == Blocks.darksand  || res.floor() == Blocks.darksand)) {
+                    return res;
+                }
+                
+            }
+            
+
+        }
+    }
+
+    return null;
+}
