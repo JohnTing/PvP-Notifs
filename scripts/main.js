@@ -1,5 +1,8 @@
 importPackage(Packages.arc.input);
 importPackage(Packages.arc.util.pooling);
+
+const jot = require("jotfunction");
+
 global.alerts = {};
 var lastUnlockTable = null;
 var lastUnlockLayout = null;
@@ -551,6 +554,21 @@ cons(e => {
 			return "has started surge production "+toBlockEmoji(block)+""+toBlockEmoji(Items.surgeAlloy);
 		}
 	}));
+
+    // pyratiteMixer
+	addTrackHandler(BlockTrackHandler.new("pyratite",BlockBuildTracker, Blocks.pyratiteMixer,false,{
+		"customText": function(team,block,tile){
+			return "has started pyratite production "+toBlockEmoji(block)+""+toBlockEmoji(Items.pyratite);
+		}
+	}));
+
+    // blastMixer
+	addTrackHandler(BlockTrackHandler.new("blast",BlockBuildTracker, Blocks.blastMixer,false,{
+		"customText": function(team,block,tile){
+			return "has started blast production "+toBlockEmoji(block)+""+toBlockEmoji(Items.blastCompound);
+		}
+	}));
+
 	addTrackHandler(BlockTrackHandler.new("foreshadow",BlockBuildTracker, Blocks.foreshadow,false,{}));
 	
 	
@@ -898,7 +916,10 @@ var playerMiningAI= extend(AIController,{
             if(this.timer.get(1, 240) || this.targetItem == null){
                 // let mineItems = unit.team.data().mineItems;
                 let mineItems = Seq.with(Items.copper, Items.lead, Items.coal, Items.titanium, Items.thorium);
-                this.targetItem = mineItems.min(boolf(i => Vars.indexer.hasOre(i) && unit.canMine(i)),floatf(i => core.items.get(i)));
+
+                this.targetItem = mineItems.min(boolf(i => Vars.indexer.hasOre(i) && unit.canMine(i)),floatf(i => core.items.get(i) - jot.orePriority(i)));
+
+
             }
             
             //core full of the target item, do nothing
@@ -991,7 +1012,7 @@ function hasAmmo(build){
 
 Events.run(Trigger.draw, () => {
 
-    drawMouse();
+    jot.drawMouse();
 
 	var camera = Core.camera;
 	var avgx = Math.floor(camera.position.x / Vars.tilesize);
@@ -1193,28 +1214,6 @@ Events.on(EventType.WorldLoadEvent, e => {
 		pips.clear();
 	}
 });
-// Groups.player.index(1).unit().aimX
-function drawMouse() {
-    Groups.player.each(cons((e)=>{
-        let unit = e.unit();
-
-        if(unit && e != Vars.player) {
-            let color = e.team().color;
-            let x = e.mouseX;
-            let y = e.mouseY;
-            if(color && x && y) {
-
-                Drawf.circles(x, y, 6, color);
-                Lines.stroke(3, Pal.gray);
-                Lines.dashLine(unit.x, unit.y, x, y, Math.round(unit.dst(x, y) / 8));
-                Lines.stroke(1, color);
-                Lines.dashLine(unit.x, unit.y, x, y, Math.round(unit.dst(x, y) / 8));
-            }
-
-        }
-    }));
-    Draw.reset();
-};
 
 
 
