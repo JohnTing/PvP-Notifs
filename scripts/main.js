@@ -506,6 +506,8 @@ Events.on(EventType.BlockDestroyEvent, cons(e => {
 	}
 }));
 var anticommandspam = new Seq();;
+
+/*
 Events.on(EventType.CommandIssueEvent, cons(e => {
 	var tile = e.tile;
 	if(tile.team!== Vars.player.team() && e.command == UnitCommand.attack){
@@ -522,7 +524,7 @@ Events.on(EventType.CommandIssueEvent, cons(e => {
 		});
 		
 	}
-}));
+}));*/
 
 Events.on(EventType.ClientLoadEvent, 
 cons(e => {
@@ -787,8 +789,8 @@ cons(e => {
 	});
 	
 	Vars.ui.hudGroup.fill(cons(t => {
-		let togglestyle = Styles.clearToggleTransi;
-		let style = Styles.clearTransi;
+		let togglestyle = Styles.clearNoneTogglei;
+		let style = Styles.clearTogglei;
 		t.button(new TextureRegionDrawable(rangeicon), togglestyle, run(()=>{
 			viewAirRange=!viewAirRange;
 		})).update(b => b.setChecked(viewAirRange)).width(46).height(46).name("airrange").tooltip("view air turret range");
@@ -854,7 +856,7 @@ cons(e => {
 		//Icon.units
 	}));
 	Vars.ui.hudGroup.fill(cons(t => {
-		let style = Styles.clearTransi;
+		let style = Styles.clearTogglei;
 		const width = 46*3/5;
 		for(let h = 0;h<schemNumber;h++){
 			const i = h;
@@ -864,10 +866,15 @@ cons(e => {
             let icon = getIcon(i+"-schem");
 			let imgbutton = t.button(icon, style, run(()=>{
 				useSchematic(Core.settings.getString(i+"-schem"), i+"-schem");
-			})).update(b => b.setDisabled(!Core.settings.getString(i+"-schem"))).width(width).height(width).name("ores").tooltip(Core.settings.getString(i+"-schem")).get();
-			imgbutton.getImage().setScaling(Scaling.stretch);
-			imgbutton.getImage().setSize(width*0.8,width*0.8);
-			imgbutton.resizeImage(width*0.8);
+			}));
+
+			imgbutton.update(b => b.setDisabled(!Core.settings.getString(i+"-schem")))
+			.width(width).height(width).name("imgbuttonores")
+			.tooltip(Core.settings.getString(i+"-schem", "_"));
+			
+			imgbutton.get().getImage().setScaling(Scaling.stretch);
+			imgbutton.get().getImage().setSize(width*0.8,width*0.8);
+			imgbutton.get().resizeImage(width*0.8);
 		}
 		t.top().right().marginTop(364);
 	}));
@@ -1200,8 +1207,11 @@ Events.run(Trigger.update, () => {
 			powerbal+=graph.getPowerBalance();
 		}
 	};
-	iterateOver(Vars.indexer.getAllied(Vars.player.team(), BlockFlag.generator).iterator(),tilecons);
-	iterateOver(Vars.indexer.getAllied(Vars.player.team(), BlockFlag.reactor).iterator(),tilecons);
+	iterateOver(Vars.indexer.getFlagged(Vars.player.team(), BlockFlag.generator).iterator(),tilecons);
+	iterateOver(Vars.indexer.getFlagged(Vars.player.team(), BlockFlag.reactor).iterator(),tilecons);
+
+	//iterateOver(Vars.indexer.getAllied(Vars.player.team(), BlockFlag.generator).iterator(),tilecons);
+	//iterateOver(Vars.indexer.getAllied(Vars.player.team(), BlockFlag.reactor).iterator(),tilecons);
 	//Vars.control.input.useSchematic(Vars.schematics.all().get(5))
 });
 
